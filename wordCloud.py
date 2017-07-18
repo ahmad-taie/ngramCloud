@@ -1,5 +1,6 @@
 import sys
 from wordcloud import WordCloud
+import wordcloud
 
 if len(sys.argv) > 1:
     gramsFile = sys.argv[1]
@@ -7,26 +8,28 @@ else:
     gramsFile = "testgrams.txt"
 
 
-ngramsList = []
-freqList = []
-surpList = []
+ngramFreqList = {}
+wordSurpList = {}
 
 with open(gramsFile) as attributes:
     # Parse the  file
     for line in attributes:
         line = line.split()
-        surpList.append(float(line[-1]))
-        freqList.append(int(line[-2]))
-        ngramsList.append(" ".join(line[:-2]))
+        word = " ".join(line[:-2])
+        wordSurpList[word] = (float(line[-1]))
+        ngramFreqList[word] = int(line[-2])
 
-print(ngramsList)
-print(freqList)
-print(surpList)
+print(ngramFreqList)
+print(wordSurpList)
 
+funColor = wordcloud.get_single_color_func('deepskyblue')
 
 # Generate a word cloud image
-wordcloud = WordCloud().generate(" ".join(ngramsList))
+wordcloud = WordCloud(background_color="white", color_func=funColor)
+wordcloud.generate_from_frequencies(ngramFreqList)
 
+
+#fit_words
 # Display the generated image:
 # the matplotlib way:
 import matplotlib.pyplot as plt
@@ -34,7 +37,7 @@ plt.imshow(wordcloud, interpolation='bilinear')
 plt.axis("off")
 
 # lower max_font_size
-wordcloud = WordCloud(max_font_size=40).generate(" ".join(ngramsList))
+wordcloud = wordcloud.generate_from_frequencies(ngramFreqList, 40)
 plt.figure()
 plt.imshow(wordcloud, interpolation="bilinear")
 plt.axis("off")
