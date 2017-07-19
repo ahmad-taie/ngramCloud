@@ -68,9 +68,9 @@ with open(gramsFile) as attributes:
 print(ngramFreqList)
 print(wordSurpList)
 
-amanshofkda = get_bicolor_func('deepskyblue',wordSurpList)
+funColor = get_bicolor_func('deepskyblue',wordSurpList)
 
-funColor = wordcloud.get_single_color_func('deepskyblue')
+#funColor = wordcloud.get_single_color_func('deepskyblue')
 
 # Generate a word cloud image
 wordcloud = WordCloud(background_color="white", color_func=funColor)
