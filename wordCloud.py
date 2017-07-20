@@ -4,6 +4,9 @@ import wordcloud
 from PIL import ImageColor
 import colorsys
 
+ngramFreqList = {}
+wordSurpList = {}
+
 
 def get_color(amount):
     assert 0 <= red_to_green <= 1
@@ -22,9 +25,8 @@ def get_bicolor_func(color, wordsurp):#color1, color2, wordSurpList):
     #>>> color_func2 = get_single_color_func('#00b4d2')
     """
 
-    # First get the range of surprisal values to normalize it
+    # First get the max of surpr. values to normalize with it
     maxSurp = wordsurp[max(wordSurpList, key=wordSurpList.get)]
-    #print(maxSurp)
 
     old_r, old_g, old_b = ImageColor.getrgb(color)
     rgb_max = 255.
@@ -43,51 +45,41 @@ def get_bicolor_func(color, wordsurp):#color1, color2, wordSurpList):
           If a random object is given, this is used for generating random
           numbers.
         """
-        valueSurpColor = wordsurp[word]/maxSurp
+        valueSurpColor = 1 - (wordsurp[word]/maxSurp)
         r, g, b = colorsys.hsv_to_rgb(h, s, valueSurpColor)
         return 'rgb({:.0f}, {:.0f}, {:.0f})'.format(r * rgb_max, g * rgb_max,
                                                     b * rgb_max)
     return single_color_func
 
-if len(sys.argv) > 1:
-    gramsFile = sys.argv[1]
-else:
-    gramsFile = "testgrams.txt"
 
-ngramFreqList = {}
-wordSurpList = {}
+def mainCloud():
 
-with open(gramsFile) as attributes:
-    # Parse the  file
-    for line in attributes:
-        line = line.split()
-        word = " ".join(line[:-2])
-        wordSurpList[word] = (float(line[-1]))
-        ngramFreqList[word] = int(line[-2])
+    if len(sys.argv) > 1:
+        gramsFile = sys.argv[1]
+    else:
+        gramsFile = "testgrams.txt"
 
-print(ngramFreqList)
-print(wordSurpList)
+    with open(gramsFile) as attributes:
+        # Parse the  file
+        for line in attributes:
+            line = line.split()
+            word = " ".join(line[:-2])
+            wordSurpList[word] = (float(line[-1]))
+            ngramFreqList[word] = int(line[-2])
 
-funColor = get_bicolor_func('deepskyblue',wordSurpList)
+    funColor = get_bicolor_func('deepskyblue', wordSurpList)
 
-#funColor = wordcloud.get_single_color_func('deepskyblue')
+    # Generate a word cloud image
+    wordcloud = WordCloud(background_color="white", color_func=funColor)
+    wordcloud.generate_from_frequencies(ngramFreqList)
 
-# Generate a word cloud image
-wordcloud = WordCloud(background_color="white", color_func=funColor)
-wordcloud.generate_from_frequencies(ngramFreqList)
+    # Display the generated image:
+    # the matplotlib way:
+    import matplotlib.pyplot as plt
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.show()
 
 
-#fit_words
-# Display the generated image:
-# the matplotlib way:
-import matplotlib.pyplot as plt
-plt.imshow(wordcloud, interpolation='bilinear')
-plt.axis("off")
-plt.show()
 
-# lower max_font_size
-# wordcloud = wordcloud.generate_from_frequencies(ngramFreqList, 40)
-# plt.figure()
-# plt.imshow(wordcloud, interpolation="bilinear")
-# plt.axis("off")
-# plt.show()
+mainCloud()
