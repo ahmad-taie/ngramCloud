@@ -1,63 +1,75 @@
 import sys
 from wordcloud import WordCloud
-import wordcloud
 from PIL import ImageColor
-import colorsys
+
 
 ngramFreqList = {}
 wordSurpList = {}
 
+def get_colorFunc(color1, color2):
 
-def get_color(amount):
-    assert 0 <= red_to_green <= 1
-    # in HSV, red is 0 deg and green is 120 deg (out of 360);
-    # divide red_to_green with 3 to map [0, 1] to [0, 1./3.]
-    hue = red_to_green / 3.0
-    r, g, b = colorsys.hsv_to_rgb(hue, 1, 1)
-    return map(lambda x: int(255 * x), (r, g, b))
+    r1, g1, b1 = ImageColor.getrgb(color1)
+    r2, g2, b2 = ImageColor.getrgb(color2)
+
+    minR = min(r1,r2)
+    minB = min(b1,b2)
+    minG = min(g1,g2)
+
+    rangeR = max(r1,r2) - minR
+    rangeB = max(b1,b2) - minB
+    rangeG = max(g1,g2) - minG
+
+    def getRGB(fract):
+        """
+        returns color based on fraction starting from min and to max
+        """
+        R = minR + fract*rangeR
+        G = minG + fract*rangeG
+        B = minB + fract*rangeB
+        return R, G, B
+
+    return getRGB
 
 
-def get_bicolor_func(color, wordsurp):#color1, color2, wordSurpList):
-    """Create a color function which returns a single hue and saturation with.
-    different values (HSV). Accepted values are color strings as usable by
-    PIL/Pillow.
-    #>>> color_func1 = get_single_color_func('deepskyblue')
-    #>>> color_func2 = get_single_color_func('#00b4d2')
-    """
+def get_bicolor_func(color1, color2, wordsurp):
+    #('deepskyblue') or ('#00b4d2')
 
     # First get the max of surpr. values to normalize with it
     maxSurp = wordsurp[max(wordSurpList, key=wordSurpList.get)]
 
-    old_r, old_g, old_b = ImageColor.getrgb(color)
-    rgb_max = 255.
-    h, s, v = colorsys.rgb_to_hsv(old_r / rgb_max, old_g / rgb_max,
-                                  old_b / rgb_max)
-
-    def single_color_func(word=None, font_size=None, position=None,
+    def colorByWordfunc(word=None, font_size=None, position=None,
                           orientation=None, font_path=None, random_state=None):
-        """Random color generation.
-        Additional coloring method. It picks a random value with hue and
-        saturation based on the color given to the generating function.
-        Parameters
-        ----------
-        word, font_size, position, orientation  : ignored.
-        random_state : random.Random object or None, (default=None)
-          If a random object is given, this is used for generating random
-          numbers.
-        """
+
         valueSurpColor = 1 - (wordsurp[word]/maxSurp)
-        r, g, b = colorsys.hsv_to_rgb(h, s, valueSurpColor)
-        return 'rgb({:.0f}, {:.0f}, {:.0f})'.format(r * rgb_max, g * rgb_max,
-                                                    b * rgb_max)
-    return single_color_func
+        rgbFunc = get_colorFunc(color1, color2)
+        r, g, b = rgbFunc(valueSurpColor)
+        return 'rgb({:.0f}, {:.0f}, {:.0f})'.format(r,g,b)
+
+    return colorByWordfunc
+
+
+def parseInput(args):
+
+    # fileName, color1, color2
+
+    gramsFile = "testgrams.txt"
+    color1 = 'red'
+    color2 = 'yellow'
+
+    argCount =  len(args)
+    if argCount > 1:
+        gramsFile = args[1]
+        if argCount > 2:
+            color1 = args[2]
+            if argCount > 3:
+                color2 = args[3]
+
+    return gramsFile, color1, color2
 
 
 def mainCloud():
 
-    if len(sys.argv) > 1:
-        gramsFile = sys.argv[1]
-    else:
-        gramsFile = "testgrams.txt"
+    gramsFile, color1, color2 = parseInput(sys.argv)
 
     with open(gramsFile) as attributes:
         # Parse the  file
@@ -67,7 +79,7 @@ def mainCloud():
             wordSurpList[word] = (float(line[-1]))
             ngramFreqList[word] = int(line[-2])
 
-    funColor = get_bicolor_func('deepskyblue', wordSurpList)
+    funColor = get_bicolor_func(color1, color2, wordSurpList)
 
     # Generate a word cloud image
     wordcloud = WordCloud(background_color="white", color_func=funColor)
